@@ -60,11 +60,12 @@ export function AtsDocument({ cvData }: Props) {
             fontSize: "9.5pt",
             color: "#333333",
             display: "flex",
-            flexWrap: "wrap",
+            flexWrap: "nowrap",
             justifyContent: "center",
             gap: "12px",
             alignItems: "center",
             marginTop: "4px",
+            whiteSpace: "nowrap",
           }}
         >
           {cvData.location && (

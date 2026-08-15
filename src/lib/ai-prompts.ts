@@ -176,31 +176,30 @@ STRICT INSTRUCTIONS — FOLLOW PRECISELY
 • Generate a draft email tailored for applying to this target position.
 • "to": Look for an email address (like recruitment, jobs, careers email) within the target job description. If found, use it. If not found, use a realistic default (e.g., "recruiter@company.com" or "hr@company.com" if company name is known).
 • "subject": A professional email subject line. Format: "Application for [Job Title] - [Full Name]". Example: "Application for Frontend Engineer - Galuh Wikri Ramadhan".
-• "body": The email body MUST follow this EXACT structure (substitute relevant company/candidate details, do NOT output any brackets, placeholders, or template variables like "[Your Name]"):
+• "body": The email body MUST follow this EXACT structure (substitute relevant company/candidate details, do NOT output any brackets, placeholders, or template variables like "[Your Name]" or "[Employer's Name]" or "[Paragraph X: ...]"):
 
-  Dear Recruitment Team,
-  [PT Company Name] ([Company Acronym/Short Name])
+  Dear [Employer's Name or Hiring Manager/Recruitment Team],
 
-  I hope this email finds you well.
+  I am writing to express my strong interest in the [Position Title] at [Company Name], as advertised on [Where You Found the Job Posting or a realistic source like LinkedIn, Job Portal, etc.]. With a background in [Relevant Skills/Experience], I am eager to contribute my expertise to your dynamic team.
 
-  My name is [Full Name], a [Degree/Education Status/Professional Title status, e.g. final-year Informatics Engineering student at Universitas Pasundan]. I am writing to express my strong interest in the [Job Title] position at [Company Acronym/Short Name], as advertised in your recent hiring announcement.
+  [Paragraph 1: Introduction]
+  (Write a 2-3 sentence paragraph introducing the candidate, stating the position they are applying for, mentioning how they learned about the position, and briefly explaining why they are interested in it.)
 
-  With a solid educational background in [Field of study/core area] and [Related areas], I possess strong analytical skills and hands-on experience in [3 key areas, e.g. managing data pipelines, SQL databases, and data-driven dashboards] to support strategic decision-making:
+  [Paragraph 2: Skills and Qualifications]
+  (Write a 3-4 sentence paragraph highlighting relevant skills, experiences, and qualifications from their CV that make them a suitable candidate for the position. Mention specific accomplishments or projects.)
 
-  • [Key Skill Area 1]: [1 sentence detail tailored to the candidate and job requirements]
-  • [Key Skill Area 2]: [1 sentence detail tailored to the candidate and job requirements]
-  • [Key Skill Area 3]: [1 sentence detail tailored to the candidate and job requirements]
-  • [Key Skill Area 4]: [1 sentence detail tailored to the candidate and job requirements]
+  [Paragraph 3: Company Research]
+  (Write a 2-3 sentence paragraph demonstrating knowledge about the company by mentioning a few specific aspects, such as recent achievements, company culture, or projects that resonate with them. Explain how they see themselves fitting into the company and contributing to its success.)
 
-  Attached to this email are my updated Curriculum Vitae (CV) and a link to my portfolio for your review and consideration.
+  [Paragraph 4: Personalized Value Proposition]
+  (Write a 2-3 sentence paragraph emphasizing what sets them apart as a candidate and how their unique skills and experiences align with the company's needs. Discuss any additional qualifications or attributes that make them a valuable asset.)
 
-  Thank you very much for your time and consideration. I would welcome the opportunity for an interview to further discuss how my technical skills and analytical mindset can contribute to [Company Acronym/Short Name].
+  [Paragraph 5: Closing Statement]
+  (Write a 2 sentence paragraph expressing enthusiasm for the opportunity to interview for the position, including availability for an interview, and expressing gratitude for the employer's time and consideration.)
 
   Sincerely,
-
-  [Full Name]
-  Phone: [Phone Number]
-  LinkedIn / Portfolio: [Portfolio URL]
+  [Your Name]
+  [Portfolio Link]
 
 ═══════════════════════════════════════
 OUTPUT FORMAT — PURE JSON ONLY
@@ -267,7 +266,7 @@ The JSON must follow this exact structure:
   "emailDraft": {
     "to": "recruiter@company.com",
     "subject": "Application for Frontend Engineer - Galuh Wikri Ramadhan",
-    "body": "Dear Recruitment Team,\nPT Company Name (Company)\n\nI hope this email finds you well.\n\nMy name is Galuh Wikri Ramadhan, a final-year Informatics Engineering student at Universitas Pasundan. I am writing to express my strong interest in the Frontend Engineer position at Company, as advertised in your recent hiring announcement.\n\nWith a solid educational background in computer science, database systems, and full-stack software architecture, I possess strong analytical skills and hands-on experience in building responsive web applications, API integrations, and database design to support strategic decision-making:\n\n• Frontend Engineering Skills: Proficient in building responsive UI layouts with React, HTML5, CSS3, and JavaScript following modern web standards.\n• Backend & Full-Stack Architecture: Experienced in building database models, query optimization with Laravel/PHP, and designing robust RESTful APIs.\n• UI/UX Design Translation: Skilled in transforming interactive Figma wireframes and prototypes into clean, production-ready code.\n• Core Collaboration & Quality: Proven ability to follow SOLID clean code principles and collaborate within agile development sprint processes.\n\nAttached to this email are my updated Curriculum Vitae (CV) and a link to my portfolio for your review and consideration.\n\nThank you very much for your time and consideration. I would welcome the opportunity for an interview to further discuss how my technical skills and analytical mindset can contribute to Company.\n\nSincerely,\n\nGaluh Wikri Ramadhan\nPhone: +62 813 xxxx xxxx\nLinkedIn / Portfolio: portofolio-galuh.vercel.app"
+    "body": "Dear Hiring Manager,\n\nI am writing to express my strong interest in the Frontend Engineer at PT Tech Solutions, as advertised on LinkedIn. With a background in building responsive web layouts and full-stack React applications, I am eager to contribute my expertise to your dynamic team.\n\nMy name is Galuh Wikri Ramadhan, a final-year Informatics Engineering student at Universitas Pasundan, and I am applying for the Frontend Engineer position. Having followed PT Tech Solutions' growth in digital solutions, I am highly motivated to bring my developer skillset to your team.\n\nOver the past two years, I have honed my technical skills by engineering several React-based web platforms and optimizing backend API integrations. For instance, I built a tailored resume parser platform using Next.js, which improved data extraction speed by 45%. This hands-on experience has equipped me with the skills to translate complex UI/UX designs into clean, high-performance code.\n\nI admire PT Tech Solutions' commitment to building seamless user experiences and its recent launch of the collaborative workspace tool. I believe my background in implementing clean architecture patterns and responsive design directly aligns with your project goals, and I am excited about the opportunity to support your team's development sprints.\n\nWhat sets me apart is my ability to quickly adopt new tech stacks combined with a strong understanding of full-stack systems. Beyond frontend coding, my knowledge of database design using PostgreSQL allows me to collaborate effectively with backend engineers and align technical implementations with business objectives.\n\nI am very enthusiastic about the opportunity to discuss my qualifications with you in an interview. I am available for a discussion at your earliest convenience and would like to thank you for your time and consideration.\n\nSincerely,\nGaluh Wikri Ramadhan\nportofolio-galuh.vercel.app"
   }
 }
   `;

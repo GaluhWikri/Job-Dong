@@ -20,56 +20,31 @@ function generateFallbackEmailBody(cv: TailoredCvData, jobTitle: string): string
   const role = jobTitle || cv.targetedRoles || "Software Developer";
   const portfolio = cv.portfolio || "LINK";
   
-  // Try to extract skills to create bullet points
-  const bulletPoints: string[] = [];
-  if (cv.skills && cv.skills.length > 0) {
-    cv.skills.slice(0, 4).forEach((skillStr) => {
-      const colonIndex = skillStr.indexOf(':');
-      if (colonIndex > -1) {
-        const category = skillStr.substring(0, colonIndex).trim();
-        const items = skillStr.substring(colonIndex + 1).trim();
-        bulletPoints.push(`• ${category} Skills: Proficient in ${items}.`);
-      } else {
-        bulletPoints.push(`• Key Skill: Proficient in ${skillStr}.`);
-      }
-    });
-  }
-  
-  // If we don't have enough skills, pad them with default professional highlights
-  if (bulletPoints.length < 1) {
-    bulletPoints.push(`• Technical Skills: Proficient in core tools and technologies relevant to the position.`);
-  }
-  if (bulletPoints.length < 2) {
-    bulletPoints.push(`• Professional Experience: Proven experience delivering high-quality project outcomes.`);
-  }
-  if (bulletPoints.length < 3) {
-    bulletPoints.push(`• Collaboration & Agile: Strong team player with experience working in sprint-based environments.`);
-  }
-  if (bulletPoints.length < 4) {
-    bulletPoints.push(`• Communication & Alignment: Ability to align technical metrics with organizational goals.`);
-  }
-  const bulletText = bulletPoints.join('\n');
+  // Try to extract skills to list in background
+  const skillsList = cv.skills && cv.skills.length > 0
+    ? cv.skills.slice(0, 3).map(s => {
+        const colonIndex = s.indexOf(':');
+        return colonIndex > -1 ? s.substring(colonIndex + 1).trim() : s;
+      }).join(', ')
+    : "software development";
 
-  return `Dear Recruitment Team,
-PT Company Name (Company)
+  return `Dear Hiring Manager,
 
-I hope this email finds you well.
+I am writing to express my strong interest in the ${role} at PT Company Name, as advertised on LinkedIn. With a background in ${skillsList}, I am eager to contribute my expertise to your dynamic team.
 
-My name is ${name}, a final-year student / professional. I am writing to express my strong interest in the ${role} position at Company, as advertised in your recent hiring announcement.
+My name is ${name}. I am writing to express my interest in the ${role} position, as I have been following your organization's work and believe my technical background aligns perfectly with the responsibilities of the role.
 
-With a solid educational background and practical experience, I possess strong analytical skills and hands-on experience in areas relevant to this role to support strategic decision-making:
+Throughout my experience, I have developed solid capabilities in designing, building, and deploying software projects. I have worked on translating complex requirements into responsive layouts and scalable logic, utilizing my experience with relevant tools to build stable applications and optimize query flows.
 
-${bulletText}
+I have been following PT Company Name's industry achievements and commitment to driving digital innovation. The collaborative and fast-paced culture at your company strongly resonates with my professional values, and I am excited about the prospect of contributing to your team's upcoming projects.
 
-Attached to this email are my updated Curriculum Vitae (CV) and a link to my portfolio for your review and consideration.
+What sets me apart is my dedication to writing clean, maintainable code and my ability to quickly pick up new tools and frameworks. My combination of technical skills and team-oriented mindset allows me to bridge technical requirements with user needs, making me a valuable asset to your team.
 
-Thank you very much for your time and consideration. I would welcome the opportunity for an interview to further discuss how my technical skills and analytical mindset can contribute to Company.
+I am highly enthusiastic about the opportunity to discuss my application further in an interview. I am available at your convenience and thank you for your time and consideration.
 
 Sincerely,
-
 ${name}
-Phone: ${phone}
-LinkedIn / Portfolio: ${portfolio}`;
+${portfolio}`;
 }
 
 function CustomCvContent() {
@@ -296,17 +271,28 @@ function CustomCvContent() {
     if (!generatedCv) return;
     setIsDownloading(true);
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      setError("Pop-up diblokir browser. Izinkan pop-up lalu coba lagi.");
+    const cvHtml = renderToStaticMarkup(<AtsDocument cvData={generatedCv} />);
+    const name = generatedCv?.fullName?.replace(/\s+/g, '_') || 'CV_ATS';
+
+    // Create a hidden iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.bottom = '0px';
+    iframe.style.right = '0px';
+    iframe.style.border = 'none';
+    
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (!doc) {
+      setError("Gagal memproses cetak PDF.");
       setIsDownloading(false);
       return;
     }
 
-    const cvHtml = renderToStaticMarkup(<AtsDocument cvData={generatedCv} />);
-    const name = generatedCv?.fullName?.replace(/\s+/g, '_') || 'CV_ATS';
-
-    printWindow.document.write(`
+    doc.write(`
       <!DOCTYPE html>
       <html lang="id">
       <head>
@@ -336,13 +322,21 @@ function CustomCvContent() {
       <body>${cvHtml}</body>
       </html>
     `);
-    printWindow.document.close();
-    printWindow.focus();
+    doc.close();
+
+    // Focus and print
     setTimeout(() => {
-      printWindow.print();
+      if (iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }
       setIsDownloading(false);
-      // Give browser time to open print dialog before closing
-      setTimeout(() => printWindow.close(), 1000);
+      // Remove iframe from DOM after print dialog has opened
+      setTimeout(() => {
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
+        }
+      }, 1000);
     }, 600);
   };
 
