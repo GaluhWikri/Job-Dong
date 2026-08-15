@@ -300,7 +300,12 @@ function CustomCvContent() {
         <title>CV_ATS_${name}</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          html, body { background: white; }
+          html, body {
+            background: white;
+            width: 210mm;
+            height: 297mm;
+            overflow: hidden;
+          }
           body {
             font-family: Arial, Helvetica, sans-serif;
             font-size: 11.5pt;
@@ -315,11 +320,41 @@ function CustomCvContent() {
             margin: 0;
           }
           @media print {
+            html, body {
+              width: 210mm;
+              height: 297mm;
+              overflow: hidden;
+            }
             body { padding: 12mm 15mm; }
+            /* Scale down content to fit if it overflows */
+            #ats-document {
+              max-height: 273mm;
+              overflow: hidden;
+              transform-origin: top left;
+            }
           }
         </style>
       </head>
-      <body>${cvHtml}</body>
+      <body>
+        <div id="ats-print-wrapper">${cvHtml}</div>
+        <script>
+          // Auto-scale content to fit exactly 1 A4 page
+          window.addEventListener('load', function() {
+            var wrapper = document.getElementById('ats-print-wrapper');
+            if (!wrapper) return;
+            var pageHeightPx = 297 * 3.7795; // 297mm in px at 96dpi
+            var paddingPx = 24 * 3.7795;     // 24mm total v-padding in px
+            var availableHeight = pageHeightPx - paddingPx;
+            var contentHeight = wrapper.scrollHeight;
+            if (contentHeight > availableHeight) {
+              var scale = availableHeight / contentHeight;
+              wrapper.style.transformOrigin = 'top left';
+              wrapper.style.transform = 'scale(' + scale + ')';
+              wrapper.style.width = (100 / scale) + '%';
+            }
+          });
+        </script>
+      </body>
       </html>
     `);
     doc.close();

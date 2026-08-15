@@ -111,10 +111,17 @@ STRICT INSTRUCTIONS — FOLLOW PRECISELY
 • Translate everything from the original CV (summaries, job titles, skills, bullet points, degrees) into natural, grammatically correct English.
 • Exception: Do NOT translate proper nouns like company names, institution names, or city/country names that are conventionally kept in their original form.
 
-[ONE PAGE LIMIT — CRITICAL]
-• The entire tailored CV MUST fit onto a single A4 page.
-• Be extremely concise. Avoid verbosity, fluff, or overly long sentences.
-• Prioritize the most impressive and relevant achievements.
+[ONE PAGE LIMIT — ABSOLUTE HARD LIMIT]
+• The ENTIRE tailored CV MUST fit onto a SINGLE A4 page. This is a non-negotiable hard limit.
+• Assume the following approximate character budgets per section to guarantee 1-page fit:
+  – Professional Summary: MAX 300 characters (2–3 very short sentences)
+  – Experience section: MAX 2 entries total, MAX 2 bullet points each, each bullet MAX 100 characters
+  – Projects section: MAX 1 project, MAX 2 bullet points, each bullet MAX 100 characters
+  – Organizations: MAX 1 entry, MAX 2 bullet points, each bullet MAX 100 characters
+  – Skills: MAX 4 rows, each row MAX 60 characters of skills listed
+• Every bullet point MUST be a single line only — no multi-line bullets.
+• If the candidate's CV has many experiences, select ONLY the TOP 2 most relevant.
+• When in doubt, cut — shorter is always better than overflowing to page 2.
 
 [INTEGRITY — NON-NEGOTIABLE]
 • NEVER invent, fabricate, or hallucinate any information: no fake company names, fake degrees, fake metrics, or fake skills.
@@ -145,22 +152,23 @@ STRICT INSTRUCTIONS — FOLLOW PRECISELY
 • Prioritize skills explicitly mentioned in the job description. Remove skills from the CV that are completely irrelevant to this role.
 
 [EXPERIENCE BULLET POINTS — Strong Action Verbs + Impact]
+• Include MAXIMUM 2 experience entries total to stay within 1 page.
 • Transform every generic duty description into a powerful achievement statement.
 • Use the CAR formula: Context → Action → Result.
 • Start each bullet with a strong action verb (Engineered, Architected, Optimized, Delivered, Spearheaded, Reduced, Increased, Designed, Implemented, Led).
 • If the original CV has numbers or metrics, preserve and highlight them.
 • Draw direct connections between the candidate's past experience and the requirements of the target job.
-• EXACTLY 2 to 3 high-impact bullet points per experience entry (do NOT generate 4 or 5 bullet points). Keep each bullet point concise (1–2 lines maximum).
+• EXACTLY 2 bullet points per experience entry (never 3, 4 or 5). Each bullet MUST be under 100 characters — a single short sentence only.
 
 [PROJECTS]
-• Select 1–2 most relevant personal/academic projects and tailor them to the job description.
-• Limit to 1–2 projects maximum, with exactly 1–2 bullet points per project.
+• Select ONLY 1 most relevant personal/academic project and tailor it to the job description.
+• Limit to 1 project maximum with exactly 2 bullet points, each under 100 characters.
 • Format: "Project Name", "Role in Project", "Duration", and highlights.
 
 [ORGANIZATIONS]
-• Select 1–2 most relevant organizational/volunteering experiences.
+• Select ONLY 1 most relevant organizational/volunteering experience.
 • Highlight leadership, teamwork, and management capabilities.
-• Limit to 1–2 organizations maximum, with exactly 1–2 bullet points per organization.
+• Limit to 1 organization maximum with exactly 2 bullet points, each under 100 characters.
 
 [DATES & DURATION]
 • Always include both start and end month+year for every experience and education entry.
