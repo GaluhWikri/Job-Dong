@@ -1,6 +1,6 @@
 import { JobAggregator, ProviderFilter } from "@/lib/job-providers/aggregator";
 import { JobCard } from "@/components/job-card";
-import { Search } from "lucide-react";
+import { Search, FolderOpen } from "lucide-react";
 import Link from "next/link";
 
 export default async function JobsPage({
@@ -29,125 +29,120 @@ export default async function JobsPage({
   };
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-10">
-      <div className="flex flex-col lg:flex-row gap-8">
-        
-        {/* Sidebar Filter */}
-        <aside className="w-full lg:w-72 shrink-0">
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-md shadow-slate-100/50 sticky top-24">
-            <h2 className="font-extrabold text-base text-slate-900 mb-5 tracking-tight">Filter Pencarian</h2>
-            
-            <form className="space-y-6">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-7xl w-full mx-auto">
+      <header className="mb-6">
+        <h1 className="font-gothic text-lg lg:text-xl font-bold uppercase tracking-[0.12em] text-foreground">Cari Lowongan</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {jobs.total} lowongan ditemukan{keyword ? ` untuk "${keyword}"` : ''} · sumber {provider} · halaman {page}
+        </p>
+      </header>
+
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Filter */}
+        <aside className="w-full lg:w-64 shrink-0">
+          <div className="card p-5 lg:sticky lg:top-6">
+            <h2 className="text-sm font-semibold text-foreground mb-4">Filter</h2>
+
+            <form className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2.5 uppercase tracking-wider">Kata Kunci</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kata kunci</label>
                 <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input 
-                    type="text" 
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
                     name="keyword"
+                    aria-label="Kata kunci lowongan"
                     defaultValue={keyword}
-                    placeholder="Posisi, skill..." 
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 text-sm font-semibold transition-all duration-200"
+                    placeholder="Posisi, skill..."
+                    className="input pl-9"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2.5 uppercase tracking-wider">Lokasi</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Lokasi</label>
+                <input
+                  type="text"
                   name="location"
+                  aria-label="Lokasi lowongan"
                   defaultValue={location}
-                  placeholder="Kota atau provinsi" 
-                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200/80 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 text-sm font-semibold transition-all duration-200"
+                  placeholder="Kota atau provinsi"
+                  className="input"
                 />
               </div>
 
               <input type="hidden" name="provider" value={provider} />
               <input type="hidden" name="page" value="1" />
 
-              <div className="pt-4 border-t border-slate-100">
-                <button type="submit" className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3.5 rounded-2xl font-bold transition-all text-sm shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 duration-200">
-                  Terapkan Filter
-                </button>
-              </div>
+              <button type="submit" className="btn-primary w-full">
+                Terapkan Filter
+              </button>
             </form>
+
+            <div className="pt-4 mt-4 border-t border-border">
+              <div className="text-xs font-medium text-muted-foreground mb-2">Sumber</div>
+              <div className="flex flex-wrap gap-1.5">
+                {providers.map((p) => (
+                  <Link
+                    key={p}
+                    href={`/jobs?${new URLSearchParams({
+                      ...(keyword ? { keyword } : {}),
+                      ...(location ? { location } : {}),
+                      provider: p,
+                      page: '1'
+                    }).toString()}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      provider === p
+                        ? 'bg-primary text-background'
+                        : 'bg-muted text-muted-foreground hover:bg-white/[0.06] hover:text-primary'
+                    }`}
+                  >
+                    {p}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </aside>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          <div className="mb-8">
-            <h1 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Lowongan Tersedia</h1>
-            
-            {/* Provider Filter Buttons */}
-            <div className="flex flex-wrap gap-2.5 mb-5">
-              {providers.map((p) => (
-                <Link 
-                  key={p} 
-                  href={`/jobs?${new URLSearchParams({
-                    ...(keyword ? { keyword } : {}),
-                    ...(location ? { location } : {}),
-                    provider: p,
-                    page: '1'
-                  }).toString()}`}
-                  className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
-                    provider === p 
-                    ? 'bg-gradient-to-tr from-primary to-primary-dark text-white shadow-md shadow-primary/25 border-transparent' 
-                    : 'bg-white border-slate-200 text-slate-600 hover:border-primary/45 hover:text-primary shadow-sm hover:shadow'
-                  }`}
-                >
-                  {p}
-                </Link>
-              ))}
-            </div>
-
-            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">
-              Menampilkan {jobs.total} lowongan {keyword ? `untuk "${keyword}"` : ''} dari {provider} (Halaman {page})
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Results */}
+        <div className="flex-1 min-w-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {jobs.data.map((job) => (
               <JobCard key={job.id} job={job} />
             ))}
           </div>
 
           {jobs.data.length === 0 && (
-            <div className="text-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm mt-6">
-              <p className="text-slate-400 font-semibold text-base">Tidak ada lowongan yang sesuai dengan kriteria filter Anda.</p>
+            <div className="card p-12 text-center animate-pop-in">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-muted text-muted-foreground grid place-items-center">
+                <FolderOpen className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Tidak ada lowongan ditemukan</p>
+              <p className="text-xs text-muted-foreground mt-1">Coba ubah kata kunci atau filter pencarian.</p>
             </div>
           )}
 
-          {/* Pagination Controls */}
           {jobs.data.length > 0 && (
-            <div className="flex justify-center items-center gap-4 mt-12">
+            <div className="flex justify-center items-center gap-3 mt-8">
               {page > 1 ? (
-                <Link 
-                  href={getPaginationUrl(page - 1)}
-                  className="px-5 py-3 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs shadow-sm transition-all duration-200"
-                >
+                <Link href={getPaginationUrl(page - 1)} className="btn-ghost text-xs">
                   &larr; Sebelumnya
                 </Link>
               ) : (
-                <button disabled className="px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-300 font-bold text-xs cursor-not-allowed">
+                <button disabled className="btn-ghost text-xs opacity-40 cursor-not-allowed">
                   &larr; Sebelumnya
                 </button>
               )}
-              
-              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/50">
-                Halaman {page}
-              </span>
+
+              <span className="badge">Halaman {page}</span>
 
               {jobs.hasMore ? (
-                <Link 
-                  href={getPaginationUrl(page + 1)}
-                  className="px-5 py-3 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs shadow-sm transition-all duration-200"
-                >
+                <Link href={getPaginationUrl(page + 1)} className="btn-ghost text-xs">
                   Selanjutnya &rarr;
                 </Link>
               ) : (
-                <button disabled className="px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 text-slate-300 font-bold text-xs cursor-not-allowed">
+                <button disabled className="btn-ghost text-xs opacity-40 cursor-not-allowed">
                   Selanjutnya &rarr;
                 </button>
               )}

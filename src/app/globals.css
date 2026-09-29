@@ -1,93 +1,378 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Dark dashboard design system
+   Kanvas karbon + permukaan bertingkat + aksen trio (kuning/koral/lime).
+   Geometri kapsul: kartu radius besar, badge & tombol bulat penuh.
+   Tanpa gradient, tanpa glow, tanpa blur — kedalaman dari beda luminansi.
+   ========================================================================== */
+
 @theme {
-  --color-primary: #0d9488;
-  --color-primary-light: #e6f4f2;
-  --color-primary-dark: #0f766e;
-  --color-secondary: #64748b;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --color-card: #ffffff;
-  --color-accent: #2dd4bf;
-  
-  --font-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --color-primary: #f5d14e; /* kuning — aksi / progres */
+  --color-primary-light: rgba(245, 209, 78, 0.14);
+  --color-primary-dark: #e0bc35;
+  --color-secondary: #adadb4;
+  --color-background: #0d0d0f; /* kanvas karbon */
+  --color-foreground: #f5f5f5;
+  --color-card: #1a1a1c; /* permukaan kartu */
+  --color-card-foreground: #f5f5f5;
+  --color-accent: #a8e85c; /* lime */
+  --color-coral: #f2604f;
+  --color-lime: #a8e85c;
+  --color-yellow: #f5d14e;
+  --color-muted: rgba(255, 255, 255, 0.05);
+  --color-muted-foreground: #adadb4;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+  --color-gold: #f5d14e;
+
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jakarta), ui-monospace, monospace;
+  /* Alias lama — dulu Orbitron/Xanh Mono, sekarang ikut font utama. */
+  --font-gothic: var(--font-jakarta), system-ui, sans-serif;
+  --font-serif: var(--font-jakarta), system-ui, sans-serif;
+
+  /* Skala radius: kartu besar, elemen dalam lebih kecil, pil penuh. */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-card: 20px;
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #0d0d0f;
+  --foreground: #f5f5f5;
+  --surface: #1a1a1c;
+  --surface-2: #1f1f21;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.18);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Rich HTML styles for job descriptions scraped from providers */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Scrollbar tipis yang menyatu dengan permukaan gelap */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+}
+
+.card-hover {
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+.card-hover:hover {
+  border-color: var(--hairline-strong);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+
+/* Kartu terang: satu permukaan dibalik untuk penekanan, seperti panel putih di referensi. */
+.card-invert {
+  background: #ffffff;
+  color: #0d0d0f;
+  border-color: transparent;
+}
+
+.input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.input::placeholder {
+  color: rgba(173, 173, 180, 0.9);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--hairline-strong);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Tombol utama: pil putih pekat dengan teks gelap. */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  color: #0d0d0f;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+.btn-primary:hover {
+  background: #e6e6e6;
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Tombol sekunder: permukaan gelap + garis rambut. */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-foreground);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--hairline-strong);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid var(--hairline);
+  background: rgba(255, 255, 255, 0.05);
+  color: #c9c9ce;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* ==========================================================================
+   Alias lama — markup yang sudah ada tetap jalan.
+   ========================================================================== */
+
+.font-gothic {
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.text-gothic-gradient {
+  color: var(--color-foreground);
+}
+
+.gothic-frame {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+}
+
+.gothic-frame::before,
+.gothic-frame::after {
+  content: none;
+}
+
+.gothic-glow,
+.gothic-glow-hover {
+  transition: border-color 0.18s ease;
+}
+.gothic-glow-hover:hover {
+  border-color: var(--hairline-strong);
+}
+
+.gothic-arch,
+.gothic-arch-full {
+  border-radius: var(--radius-xl);
+}
+
+.gothic-divider {
+  color: var(--color-muted-foreground);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gothic-divider::before,
+.gothic-divider::after {
+  content: none;
+}
+
+.gothic-stained {
+  background-image: none;
+}
+
+/* Kertas CV (cetak) tetap putih polos — keluar dari tema. */
+.paper {
+  background: #ffffff;
+  color: #111827;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-pop-in {
+  animation: pop-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes infinite-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+.animate-infinite-loading {
+  width: 40%;
+  animation: infinite-loading 1.2s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: none;
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.animate-float {
+  animation: float-y 4s ease-in-out infinite;
+}
+.animate-float-slow {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Job description (HTML dari provider)
+   ========================================================================== */
+
 .job-description-html h1,
 .job-description-html h2,
 .job-description-html h3,
 .job-description-html h4 {
   font-weight: 700;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: #0f172a;
+  color: var(--color-foreground);
+  margin: 1.25rem 0 0.5rem;
+  line-height: 1.3;
 }
-.job-description-html h1 { font-size: 1.5rem; }
-.job-description-html h2 { font-size: 1.25rem; }
-.job-description-html h3 { font-size: 1.125rem; }
+
+.job-description-html h1:first-child,
+.job-description-html h2:first-child,
+.job-description-html h3:first-child,
+.job-description-html p:first-child,
+.job-description-html ul:first-child,
+.job-description-html ol:first-child {
+  margin-top: 0;
+}
+
+.job-description-html > *:last-child {
+  margin-bottom: 0;
+}
 
 .job-description-html p {
-  margin-bottom: 1rem;
-  line-height: 1.75;
-  color: #334155;
+  margin: 0.75rem 0;
 }
 
 .job-description-html ul,
 .job-description-html ol {
-  padding-left: 1.75rem;
-  margin-bottom: 1rem;
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
 }
+
+.job-description-html li {
+  margin: 0.35rem 0;
+}
+
+.job-description-html h1 { font-size: 1.5rem; }
+.job-description-html h2 { font-size: 1.25rem; }
+.job-description-html h3 { font-size: 1.125rem; }
 
 .job-description-html ul { list-style-type: disc; }
 .job-description-html ol { list-style-type: decimal; }
 
-.job-description-html li {
-  margin-bottom: 0.5rem;
-  line-height: 1.7;
-  color: #334155;
-}
-
 .job-description-html strong,
 .job-description-html b {
-  font-weight: 600;
-  color: #0f172a;
+  font-weight: 700;
+  color: var(--color-foreground);
 }
 
 .job-description-html a {
-  color: #0d9488;
+  color: var(--color-primary);
   text-decoration: underline;
-  font-weight: 500;
 }
 
 .job-description-html hr {
   border: none;
-  border-top: 1px solid #e2e8f0;
-  margin: 1.5rem 0;
+  border-top: 1px solid var(--hairline);
+  margin: 1.25rem 0;
 }
-
-/* Custom Background AI Jobs progress bar animation */
-@keyframes infinite-loading {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-infinite-loading {
-  width: 50%;
-  animation: infinite-loading 1.5s infinite linear;
-}
-

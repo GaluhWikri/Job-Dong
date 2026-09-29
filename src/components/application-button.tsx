@@ -5,6 +5,7 @@ import { Sparkles, Loader2, CheckCircle2, AlertCircle, AlertTriangle } from "luc
 import { useRouter } from "next/navigation";
 import { useBackgroundJobs } from "@/context/background-jobs-context";
 import { createClient } from "@/lib/supabase/client";
+import { getLocalCvText } from "@/lib/local-profile";
 
 interface Props {
   jobId: string;
@@ -34,20 +35,24 @@ export function ApplicationButton({ jobId, jobTitle, companyName, location, jobD
   const handleApplyClick = async () => {
     setIsLoading(true);
     try {
-      // 1. Quick check if base CV exists in Supabase
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('user_cvs')
-        .select('cv_text')
-        .eq('user_id', "default_user")
-        .single();
-      
-      if (!data || !data.cv_text) {
+      // 1. CV dari browser dipakai dulu (cloud bisa tidak tersedia), cloud jadi cadangan.
+      let hasCv = Boolean(getLocalCvText().trim());
+      if (!hasCv) {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('user_cvs')
+          .select('cv_text')
+          .eq('user_id', "default_user")
+          .single();
+        hasCv = Boolean(data?.cv_text);
+      }
+
+      if (!hasCv) {
         setNotification({
           show: true,
           type: "warning",
           title: "CV Belum Tersedia",
-          message: "CV Utama Anda belum tersedia. Silakan isi CV Anda di halaman Profil terlebih dahulu agar AI bisa membuatkan CV khusus untuk lowongan ini.",
+          message: "CV Utama Anda belum ada. Isi CV di halaman Profil (atau tempel di Kanban) agar AI bisa membuatkan CV khusus untuk lowongan ini.",
           onConfirm: () => {
             router.push('/profile');
           }
@@ -79,53 +84,43 @@ export function ApplicationButton({ jobId, jobTitle, companyName, location, jobD
     }
   };
 
+  const ICONS = {
+    success: { Icon: CheckCircle2, cls: "bg-white/[0.06] text-foreground" },
+    error: { Icon: AlertCircle, cls: "bg-white/[0.05] text-foreground" },
+    warning: { Icon: AlertTriangle, cls: "bg-white/[0.05] text-foreground" },
+  };
+
   return (
     <>
-      <button
-        onClick={handleApplyClick}
-        disabled={isJobLoading}
-        className="bg-primary hover:bg-primary-light text-white px-8 py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-primary/30 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-      >
+      <button onClick={handleApplyClick} disabled={isJobLoading} className="btn-primary w-full">
         {isJobLoading ? (
           <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Memproses AI (BG)...
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Memproses AI...
           </>
         ) : (
           <>
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
             Buat CV Otomatis
           </>
         )}
       </button>
 
-      {/* Modern Custom UI Notification Overlay */}
       {notification && notification.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-gray-100 shadow-2xl transform scale-100 transition-all flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            {notification.type === 'success' && (
-              <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center animate-bounce">
-                <CheckCircle2 className="w-9 h-9" />
-              </div>
-            )}
-            {notification.type === 'error' && (
-              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-9 h-9" />
-              </div>
-            )}
-            {notification.type === 'warning' && (
-              <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-9 h-9" />
-              </div>
-            )}
-            
-            <h3 className="text-xl font-bold text-gray-900">
-              {notification.title}
-            </h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              {notification.message}
-            </p>
-            
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="card p-6 max-w-sm w-full flex flex-col items-center text-center gap-3 animate-pop-in">
+            {(() => {
+              const { Icon, cls } = ICONS[notification.type];
+              return (
+                <div className={`w-12 h-12 rounded-xl grid place-items-center ${cls}`}>
+                  <Icon className="w-6 h-6" />
+                </div>
+              );
+            })()}
+
+            <h3 className="text-base font-semibold text-foreground">{notification.title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{notification.message}</p>
+
             <button
               onClick={() => {
                 const onConf = notification.onConfirm;
@@ -134,7 +129,7 @@ export function ApplicationButton({ jobId, jobTitle, companyName, location, jobD
                   onConf();
                 }
               }}
-              className="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl font-semibold transition-colors mt-2"
+              className="btn-primary w-full mt-1"
             >
               Lanjutkan
             </button>

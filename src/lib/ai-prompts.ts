@@ -1,72 +1,68 @@
 // =============================================================================
-// PROMPT: CV/Resume Text Extraction (Upload Phase)
-// Used in: /api/upload-cv
+// PROMPT: CV/Resume Text Extraction (Upload Phase — hanya untuk CV berupa
+// gambar / PDF hasil scan; PDF & DOCX bertekstur diekstrak lokal di lib/cv-file.ts)
 // =============================================================================
-export const UPLOAD_CV_PROMPT = `You are a world-class Resume Data Extraction Engine (OCR + NLP Expert).
-Your task is to read the attached CV/Resume document and convert it into a complete, structured plain text — preserving every piece of information faithfully.
+export const UPLOAD_CV_PROMPT = `You are a meticulous Resume OCR & Data Extraction specialist.
+Read the attached CV/Resume (image or scanned document) and transcribe it into clean, structured plain text.
 
 EXTRACTION RULES (CRITICAL — DO NOT VIOLATE):
-1. NEVER hallucinate or fabricate details (company names, years, institutions, skills, or metrics not present in the document).
-2. EXTRACT EVERY achievement, metric, and bullet point from the work experience sections. Do not skip, summarize, or abbreviate any entry.
-3. Preserve the original chronological order of all experience and education entries.
-4. Do NOT add filler phrases (e.g., "Here is the extracted text..."). Output directly.
-5. Preserve the original language of the document. Do NOT translate at this stage.
-6. PROFESSIONAL SUMMARY: If the original CV does not include a professional summary section, compose one honestly (2–3 sentences) that accurately reflects the candidate's profile, experience level, and core competencies as shown in the document.
-7. Extract ALL contact details: full name, phone, email, portfolio links (GitHub, LinkedIn, personal sites), and city/location.
-8. For GPA or academic scores, preserve the exact format (e.g., IPK: 3.47 / 4.00).
+1. Transcribe ONLY what is visibly written. Never invent, complete, or "improve" anything.
+2. Capture EVERY entry: all work experience, projects, organizations, education, skills, and contact details.
+3. Preserve original numbers, dates, and wording (translate nothing at this stage).
+4. Preserve the original order of sections and entries.
+5. If a section does not exist in the document, omit that section entirely — do not create one.
+6. Ignore decorative elements (logos, background images, watermarks).
+7. Output the transcription only — no preamble such as "Here is the extracted text".
 
-Expected output format (clean plain text):
+Output format (clean plain text):
 [Full Name]
 [Contact: Phone / Email / LinkedIn / Portfolio URL]
 [Location: City, Province/Country]
 
-[Professional Summary]
-(Summary text — extracted or honestly composed)
+[Profile/Summary — only if present in the document]
 
 [Skills]
-- Skill 1, Skill 2, Skill 3, ...
+- Category: skill, skill, skill
 
 [Work Experience]
-- [Job Title] at [Company Name] ([Month/Year - Month/Year])
-  * [Achievement/Task 1]
-  * [Achievement/Task 2]
+- [Job Title] at [Company] ([Month Year – Month Year])
+  * [Bullet as written]
 
 [Education]
-- [Degree] – [Institution] ([Start Year – End Year or Graduation Date])
-  GPA: X.XX / 4.00 (if available)
+- [Degree] – [Institution] ([Start – End])
+  GPA: X.XX / 4.00 (only if written)
 
-[Projects]
-- [Project Name] – [Role] ([Duration])
-  * [Highlight 1]
-
-[Organizations]
-- [Organization Name] – [Role] ([Duration])
-  * [Highlight 1]`;
+[Projects] / [Organizations]
+- [Name] – [Role] ([Duration])
+  * [Bullet as written]`;
 
 
 // =============================================================================
 // PROMPT: Job Posting Screenshot Analysis
 // Used in: /api/analyze-job-image
 // =============================================================================
-export const ANALYZE_JOB_IMAGE_PROMPT = `
-  Analyze this screenshot of a job posting.
-  Extract the following information and return it as pure JSON (no markdown code blocks, no extra text):
-  {
-    "jobTitle": "The exact job title or position name from the posting",
-    "jobDescription": "Complete job description including: responsibilities, requirements, qualifications, and any other relevant details. Write as clean, well-structured plain text paragraphs."
-  }
-  Return only the JSON object, nothing else.
-`;
+export const ANALYZE_JOB_IMAGE_PROMPT = `You are an expert recruiter reading a screenshot of a job posting.
+
+Extract the posting faithfully into JSON with these exact keys:
+- "jobTitle": the position title exactly as written in the posting.
+- "companyName": the hiring company name if it appears anywhere in the posting, otherwise "".
+- "applicationEmail": the email address candidates must send applications to, if present, otherwise "".
+- "jobDescription": the COMPLETE posting content as clean structured plain text: responsibilities, requirements, qualifications, tools/technologies mentioned, experience level, and location. Keep every concrete requirement (tools, years, certifications) — do not summarize them away. If a section is absent, omit it.
+
+Never invent a company name, email address, or requirement that is not in the screenshot.
+Return ONLY the JSON object — no markdown fences, no commentary.`;
 
 
 // =============================================================================
 // PROMPT: ATS-Optimized CV Tailoring (Generation Phase)
 // Used in: /api/generate-cv
 // =============================================================================
-interface GenerateCvPromptParams {
+export interface GenerateCvPromptParams {
   cvText: string;
   jobTitle: string;
   jobDescription: string;
+  companyName?: string;
+  applicationEmail?: string;
   fullName?: string;
   email?: string;
   phone?: string;
@@ -76,206 +72,260 @@ export function getGenerateCvPrompt({
   cvText,
   jobTitle,
   jobDescription,
+  companyName,
+  applicationEmail,
   fullName,
   email,
   phone,
 }: GenerateCvPromptParams) {
   return `
-You are a world-class ATS Resume Specialist, Executive Career Coach, and Senior HR Consultant with 20+ years of experience helping candidates land roles at top companies.
+You are a senior HR & Talent Acquisition professional with 20+ years of experience screening resumes —
+first as an ATS reviewer, then as the human recruiter reading shortlisted CVs. You are now on the
+candidate's side: your job is to re-package THIS candidate's real CV so it survives both the ATS
+keyword filter and the 30-second human skim, and reads as written by a real professional.
 
-Your mission: Transform the candidate's raw CV into a precisely tailored, ATS-optimized, professionally written resume that maximizes the match score for the target job below.
-
-═══════════════════════════════════════
-CANDIDATE INFORMATION (DO NOT FABRICATE)
-═══════════════════════════════════════
-Full Name: ${fullName || '(extract from CV text)'}
-Email: ${email || '(extract from CV text)'}
-Phone: ${phone || '(extract from CV text)'}
+Your reputation depends on ONE rule: everything you write must be traceable to the candidate's own CV.
 
 ═══════════════════════════════════════
-CANDIDATE'S ORIGINAL CV (SOURCE OF TRUTH)
+SOURCE OF TRUTH — THE CANDIDATE'S CV (verified facts only)
 ═══════════════════════════════════════
 ${cvText}
 
 ═══════════════════════════════════════
-TARGET JOB POSITION: "${jobTitle}"
+TARGET POSITION: "${jobTitle}"
+${companyName ? `HIRING COMPANY: ${companyName}` : 'HIRING COMPANY: not stated in the posting (do NOT invent one)'}
 ═══════════════════════════════════════
 ${jobDescription}
 
 ═══════════════════════════════════════
-STRICT INSTRUCTIONS — FOLLOW PRECISELY
+STEP 1 — ANALYZE BEFORE WRITING (do this internally, do not output it)
 ═══════════════════════════════════════
+1. Identify the top 5–8 requirements the posting actually emphasizes (tools, skills, years, certifications, responsibilities).
+2. For each requirement, ask: "What in the CV is real evidence for this?" Evidence may be a tool, a project, a task, or a responsibility.
+3. Build the CV in this priority order: (a) requirements the candidate genuinely has, (b) partially related experience described in transferable terms, (c) everything else — kept short or dropped if it is irrelevant to this job.
 
+═══════════════════════════════════════
+INTEGRITY — ABSOLUTE, NON-NEGOTIABLE
+═══════════════════════════════════════
+FORBIDDEN — any of these makes your output worthless:
+✗ Inventing metrics or results (e.g. "improved performance by 40%", "reduced latency by 30%") when the CV states no number.
+✗ Inventing employers, clients, dates, job titles, degrees, certifications, or tools the candidate never used.
+✗ Inventing a company name or company facts for the target job. If the posting does not name the company, write "your company" / "the company" — never a made-up name like "Tech Innovations Inc.".
+✗ Claiming experience the CV does not support (e.g. writing "1 year of QA experience" for a student with one internship).
+✗ Copying the phrasing of any example in this prompt as if it were the candidate's data.
+
+ALLOWED (this is packaging, not lying):
+✓ Translating the CV into professional English.
+✓ Rewording a duty into a stronger, clearer achievement statement (Context → Action → Result) using the SAME facts.
+✓ Grouping, reordering, and trimming skills so the ones the job asks for come first.
+✓ Using the posting's own vocabulary for skills the candidate demonstrably has (e.g. CV says "API response validation with Postman", posting says "API testing" → "API testing (Postman)").
+✓ Calling attention to a project or course that proves a required skill.
+✓ Omitting irrelevant content to keep the CV focused.
+
+When a requirement is NOT supported by the CV: leave it out. Do not mention it in the summary and do not add it as a skill.
+
+═══════════════════════════════════════
+STYLE & LAYOUT RULES
+═══════════════════════════════════════
 [LANGUAGE]
-• ALL output content MUST be written in fluent, professional ENGLISH.
-• Translate everything from the original CV (summaries, job titles, skills, bullet points, degrees) into natural, grammatically correct English.
-• Exception: Do NOT translate proper nouns like company names, institution names, or city/country names that are conventionally kept in their original form.
+• Write ALL output in fluent professional English. Keep proper nouns (company, institution, city) as-is.
 
-[ONE PAGE LIMIT — ABSOLUTE HARD LIMIT]
-• The ENTIRE tailored CV MUST fit onto a SINGLE A4 page. This is a non-negotiable hard limit.
-• Assume the following approximate character budgets per section to guarantee 1-page fit:
-  – Professional Summary: MAX 300 characters (2–3 very short sentences)
-  – Experience section: MAX 2 entries total, MAX 2 bullet points each, each bullet MAX 100 characters
-  – Projects section: MAX 1 project, MAX 2 bullet points, each bullet MAX 100 characters
-  – Organizations: MAX 1 entry, MAX 2 bullet points, each bullet MAX 100 characters
-  – Skills: MAX 4 rows, each row MAX 60 characters of skills listed
-• Every bullet point MUST be a single line only — no multi-line bullets.
-• If the candidate's CV has many experiences, select ONLY the TOP 2 most relevant.
-• When in doubt, cut — shorter is always better than overflowing to page 2.
+[ONE PAGE — hard limit, but substance beats padding]
+• Everything must fit one A4 page.
+• Summary: 2–3 sentences, max ~320 characters.
+• Experience: include every genuine entry that matters for this job (max 3), each with 2–3 bullets, one line each (~150 characters max).
+• Projects: max 2, each 1–2 bullets. Organizations: max 1, 1–2 bullets.
+• Skills: max 4 rows, each row "Category: item, item, item" (max ~90 characters per row).
+• If it grows past one page, cut the least job-relevant line — never cut a fact to fit a nice sentence.
 
-[INTEGRITY — NON-NEGOTIABLE]
-• NEVER invent, fabricate, or hallucinate any information: no fake company names, fake degrees, fake metrics, or fake skills.
-• You are a professional packager and translator, NOT a fiction writer.
-• If a piece of information is not in the original CV or the candidate info above, leave it out entirely.
+[SUMMARY]
+• First sentence: who the candidate is + their level (use the CV's real seniority — student, fresh graduate, 1 year, etc.).
+• Then the 2–3 strongest requirements of the posting the candidate can genuinely back up.
+• Closing sentence: what they are aiming for in this specific role.
+• No clichés without substance ("hard-working team player", "passionate professional").
 
-[TARGETED ROLES]
-• Create a concise role sub-headline that combines the applied position with the candidate's core expertise.
-• Example: "Frontend Engineer / Software Developer" or "IT Support Specialist / Network Engineer"
-• This MUST align with the job title being applied for.
+[SKILLS]
+• Only skills present in the CV. Order categories by how much the posting cares about them.
+• Use the posting's terminology for equivalent skills the candidate has.
 
-[PROFESSIONAL SUMMARY — 2–3 sentences, high impact, very concise]
-• Open with the candidate's professional title and total years of relevant experience.
-• Incorporate 2–3 of the most critical keywords directly from the job description.
-• Highlight the candidate's top accomplishment or strength most relevant to this specific role.
-• Keep it brief: maximum 3 sentences.
+[EXPERIENCE / PROJECTS / ORGANIZATIONS]
+• Start every bullet with a strong action verb (Developed, Automated, Validated, Executed, Documented, Analysed, Coordinated, Designed, Led…). Never reuse the same verb twice in a row.
+• Each bullet = one concrete fact from the CV: what was done, with what tool/method, for what purpose. Numbers only if the CV has them.
+• Prefer variety (testing, API validation, documentation, cross-team coordination) over three near-identical bullets.
 
-[ATS KEYWORD OPTIMIZATION]
-• Analyze the job description and extract all hard skills, tools, technologies, and action verbs mentioned.
-• Naturally weave those exact keywords into the summary, skills, and experience bullet points.
-• Do NOT stuff keywords unnaturally — integrate them contextually.
+[EDUCATION & DATES]
+• Copy institution, degree, GPA, and dates exactly as in the CV. Use "Month YYYY – Month YYYY" (or "Month YYYY – Present"). If the CV only gives years, keep years only.
+• GPA must never be dropped: append it to the degree string, e.g. "Bachelor of Informatics Engineering — GPA: 3.47 / 4.00".
 
-[SKILLS — Grouped by category]
-• Organize skills into maximum 3–4 logical categories relevant to the job posting.
-• Limit each category to a maximum of 5–6 key skills.
-• Category examples: "Frontend Engineering", "Backend Development", "UI/UX & Design", "DevOps & Tools"
-• Each skill group format: "Category Name: Skill A, Skill B, Skill C"
-• Prioritize skills explicitly mentioned in the job description. Remove skills from the CV that are completely irrelevant to this role.
+[CONTACT & HEADLINE]
+• Use these verified candidate details exactly when given, otherwise take them from the CV. Never alter contact details:
+  name  : ${fullName || '(from CV)'}
+  email : ${email || '(from CV)'}
+  phone : ${phone || '(from CV)'}
+• "targetedRoles": start with the exact position title from the posting, then a secondary angle the CV supports, e.g. "Quality Assurance Engineer / Software Tester".
+• "location": city + province/country from the CV. "portfolio": only links that exist in the CV or candidate info.
 
-[EXPERIENCE BULLET POINTS — Strong Action Verbs + Impact]
-• Include MAXIMUM 2 experience entries total to stay within 1 page.
-• Transform every generic duty description into a powerful achievement statement.
-• Use the CAR formula: Context → Action → Result.
-• Start each bullet with a strong action verb (Engineered, Architected, Optimized, Delivered, Spearheaded, Reduced, Increased, Designed, Implemented, Led).
-• If the original CV has numbers or metrics, preserve and highlight them.
-• Draw direct connections between the candidate's past experience and the requirements of the target job.
-• EXACTLY 2 bullet points per experience entry (never 3, 4 or 5). Each bullet MUST be under 100 characters — a single short sentence only.
-
-[PROJECTS]
-• Select ONLY 1 most relevant personal/academic project and tailor it to the job description.
-• Limit to 1 project maximum with exactly 2 bullet points, each under 100 characters.
-• Format: "Project Name", "Role in Project", "Duration", and highlights.
-
-[ORGANIZATIONS]
-• Select ONLY 1 most relevant organizational/volunteering experience.
-• Highlight leadership, teamwork, and management capabilities.
-• Limit to 1 organization maximum with exactly 2 bullet points, each under 100 characters.
-
-[DATES & DURATION]
-• Always include both start and end month+year for every experience and education entry.
-• Format: "Month YYYY – Month YYYY" (e.g., "October 2022 – June 2026") or "Month YYYY – Present".
-• Do NOT use vague formats like "2022 – 2026" without months, unless the original CV only provides years.
-
-[CONTACT INFO]
-• Prioritize the provided candidate info (name, email, phone) above any extracted from the CV text.
-• Extract portfolio, GitHub, LinkedIn, and location from the CV text if not provided explicitly.
-• For portfolio links, clean them up (e.g., "portofolio-galuh.vercel.app" → use as-is without adding https://).
-
-[EMAIL DRAFT — Cover Letter / Application Email]
-• Generate a draft email tailored for applying to this target position.
-• "to": Look for an email address (like recruitment, jobs, careers email) within the target job description. If found, use it. If not found, use a realistic default (e.g., "recruiter@company.com" or "hr@company.com" if company name is known).
-• "subject": A professional email subject line. Format: "Application for [Job Title] - [Full Name]". Example: "Application for Frontend Engineer - Galuh Wikri Ramadhan".
-• "body": The email body MUST follow this EXACT structure (substitute relevant company/candidate details, do NOT output any brackets, placeholders, or template variables like "[Your Name]" or "[Employer's Name]" or "[Paragraph X: ...]"):
-
-  Dear [Employer's Name or Hiring Manager/Recruitment Team],
-
-  I am writing to express my strong interest in the [Position Title] at [Company Name], as advertised on [Where You Found the Job Posting or a realistic source like LinkedIn, Job Portal, etc.]. With a background in [Relevant Skills/Experience], I am eager to contribute my expertise to your dynamic team.
-
-  [Paragraph 1: Introduction]
-  (Write a 2-3 sentence paragraph introducing the candidate, stating the position they are applying for, mentioning how they learned about the position, and briefly explaining why they are interested in it.)
-
-  [Paragraph 2: Skills and Qualifications]
-  (Write a 3-4 sentence paragraph highlighting relevant skills, experiences, and qualifications from their CV that make them a suitable candidate for the position. Mention specific accomplishments or projects.)
-
-  [Paragraph 3: Company Research]
-  (Write a 2-3 sentence paragraph demonstrating knowledge about the company by mentioning a few specific aspects, such as recent achievements, company culture, or projects that resonate with them. Explain how they see themselves fitting into the company and contributing to its success.)
-
-  [Paragraph 4: Personalized Value Proposition]
-  (Write a 2-3 sentence paragraph emphasizing what sets them apart as a candidate and how their unique skills and experiences align with the company's needs. Discuss any additional qualifications or attributes that make them a valuable asset.)
-
-  [Paragraph 5: Closing Statement]
-  (Write a 2 sentence paragraph expressing enthusiasm for the opportunity to interview for the position, including availability for an interview, and expressing gratitude for the employer's time and consideration.)
-
-  Sincerely,
-  [Your Name]
-  [Portfolio Link]
+[EMAIL DRAFT]
+• "to": ${applicationEmail ? `use exactly this address from the posting: ${applicationEmail}` : 'if the posting states an application/recruitment email use it; if not, return "" (empty string). NEVER invent an address on a real domain.'}
+• "subject": "Application for [Exact Job Title] - [Full Name]".
+• "body": a professional cover email (write it in the language of the job posting) with:
+  opening (position + where the posting was seen) → evidence paragraph (2–3 real achievements/projects from the CV relevant to the posting) → why this role (only facts stated in the posting; otherwise keep it generic and brief) → short close with availability.
+• Maximum ~230 words. No placeholders, no brackets, no invented achievements, no fabricated company details.
+• FORMAT: separate the greeting, each paragraph, and the sign-off with a real blank line — encode them as "\n\n" in the JSON string. Never return the email as one continuous line.
+• Sign off with the candidate's real name.
 
 ═══════════════════════════════════════
-OUTPUT FORMAT — PURE JSON ONLY
+OUTPUT
 ═══════════════════════════════════════
-Return ONLY a valid JSON object. No markdown, no code blocks, no explanation text before or after.
-The JSON must follow this exact structure:
+Return ONLY the JSON object described by the response schema. No markdown, no commentary.
+Use "" or [] for any optional field where the CV genuinely has no data.
+`;
+}
 
-{
-  "fullName": "Candidate's Full Name",
-  "targetedRoles": "Primary Role / Secondary Role (e.g., Frontend Engineer / Software Developer)",
-  "email": "email@example.com",
-  "phone": "+62 813 xxxx xxxx",
-  "portfolio": "portofolio-galuh.vercel.app",
-  "location": "Bandung, West Java",
-  "professionalSummary": "Results-driven Frontend Engineer with 2+ years of hands-on experience building scalable web applications using React, JavaScript, and Laravel. Proven track record of delivering responsive, high-performance UI solutions that improved user engagement by 40%. Adept at cross-functional collaboration and agile methodologies, seeking to leverage full-stack capabilities to drive product excellence at [Company].",
-  "skills": [
-    "Frontend Engineering: React.js, HTML5, CSS3, JavaScript, Responsive Web Design, RESTful API Integration",
-    "Backend & Full-Stack: Laravel, PHP, Node.js, MySQL",
-    "UI/UX & Design Tools: Figma, Wireframing, Interactive Prototyping",
-    "DevOps & Version Control: Git, GitHub, Visual Studio Code",
-    "Core Methodologies: Agile Development, Clean Code Practices, OOP, Software Design Patterns, Technical Documentation"
-  ],
-  "experiences": [
-    {
-      "company": "Company Name (as-is from original CV)",
-      "role": "Job Title — Project Name or Division (if applicable)",
-      "duration": "Month YYYY – Month YYYY",
-      "highlights": [
-        "Engineered a full-stack mobile blogging platform using Laravel and Jetpack Compose, delivering a production-ready app with CRUD operations and real-time authentication within 2 months.",
-        "Architected and integrated 12+ secure RESTful APIs handling user authentication, article management, and media uploads, reducing backend response time by 30%.",
-        "Implemented Clean Architecture patterns and component-driven UI design following SOLID principles, improving codebase maintainability and onboarding speed."
-      ]
-    }
-  ],
-  "education": [
-    {
-      "institution": "Institution Name (as-is)",
-      "degree": "Bachelor of Informatics Engineering — GPA: 3.47 / 4.00",
-      "year": "October 2022 – June 2026"
-    }
-  ],
-  "projects": [
-    {
-      "name": "Project Name (e.g., Job Dong App)",
-      "role": "Lead Full-Stack Developer",
-      "duration": "March 2026 – May 2026",
-      "highlights": [
-        "Built a secure resume extraction tool using Next.js and Google Gemini API, decreasing parse latency by 45%.",
-        "Designed responsive, single-page CV layouts to ensure a professional look and perfect A4 formatting."
-      ]
-    }
-  ],
-  "organizations": [
-    {
-      "name": "Student Association of Informatics",
-      "role": "Head of Academic Department",
-      "duration": "January 2023 – December 2024",
-      "highlights": [
-        "Led a team of 15 members to organize 3 national tech seminars, attracting over 1,200 participants.",
-        "Facilitated study groups for 100+ freshman students, improving the department's average GPA by 0.15 points."
-      ]
-    }
-  ],
-  "emailDraft": {
-    "to": "recruiter@company.com",
-    "subject": "Application for Frontend Engineer - Galuh Wikri Ramadhan",
-    "body": "Dear Hiring Manager,\n\nI am writing to express my strong interest in the Frontend Engineer at PT Tech Solutions, as advertised on LinkedIn. With a background in building responsive web layouts and full-stack React applications, I am eager to contribute my expertise to your dynamic team.\n\nMy name is Galuh Wikri Ramadhan, a final-year Informatics Engineering student at Universitas Pasundan, and I am applying for the Frontend Engineer position. Having followed PT Tech Solutions' growth in digital solutions, I am highly motivated to bring my developer skillset to your team.\n\nOver the past two years, I have honed my technical skills by engineering several React-based web platforms and optimizing backend API integrations. For instance, I built a tailored resume parser platform using Next.js, which improved data extraction speed by 45%. This hands-on experience has equipped me with the skills to translate complex UI/UX designs into clean, high-performance code.\n\nI admire PT Tech Solutions' commitment to building seamless user experiences and its recent launch of the collaborative workspace tool. I believe my background in implementing clean architecture patterns and responsive design directly aligns with your project goals, and I am excited about the opportunity to support your team's development sprints.\n\nWhat sets me apart is my ability to quickly adopt new tech stacks combined with a strong understanding of full-stack systems. Beyond frontend coding, my knowledge of database design using PostgreSQL allows me to collaborate effectively with backend engineers and align technical implementations with business objectives.\n\nI am very enthusiastic about the opportunity to discuss my qualifications with you in an interview. I am available for a discussion at your earliest convenience and would like to thank you for your time and consideration.\n\nSincerely,\nGaluh Wikri Ramadhan\nportofolio-galuh.vercel.app"
-  }
+
+// =============================================================================
+// PROMPT: CV ↔ Job Description Match Score + CV Improvement Advice
+// Used in: /api/match-score
+// =============================================================================
+export interface MatchScorePromptParams {
+  cvText: string;
+  jobDescription: string;
 }
-  `;
+
+export function getMatchScorePrompt({ cvText, jobDescription }: MatchScorePromptParams) {
+  return `You are a senior technical recruiter who screens resumes against job postings every day.
+Score how well THIS candidate's CV matches THIS job posting, and tell the candidate how to improve the CV.
+
+═══════════════════════════════════════
+CANDIDATE CV (the only source of truth about the candidate)
+═══════════════════════════════════════
+${cvText}
+
+═══════════════════════════════════════
+JOB POSTING
+═══════════════════════════════════════
+${jobDescription}
+
+═══════════════════════════════════════
+SCORING (be strict, be consistent)
+═══════════════════════════════════════
+1. Extract every concrete requirement from the posting (skills, tools, years of experience, education, certifications, language, domain).
+2. For each requirement, find REAL evidence in the CV. A requirement counts as met only if the CV proves it — do not give credit for "probably", "likely", or "can learn fast".
+3. Weight the score: hard skills/tools 40%, relevant experience & seniority 30%, domain/industry fit 15%, education & certifications 10%, nice-to-have 5%.
+4. Score bands: 85+ excellent (shortlist-worthy), 70–84 good (worth applying), 50–69 partial (needs CV rework), <50 weak.
+
+═══════════════════════════════════════
+RULES
+═══════════════════════════════════════
+- Never invent experience, tools, numbers, or achievements for the candidate.
+- "matched": requirements the CV genuinely proves — phrase each as "requirement → evidence from the CV".
+- "missing": requirements the posting asks for that the CV does not show. If none, return [].
+- "suggestions": 3–5 CONCRETE, actionable CV edits the candidate can do TODAY, grounded only in facts already in the CV — e.g. "Pindahkan skill X ke baris pertama Skills karena diminta posting ini", "Bullet 'A' belum menyebut alat B yang sudah Anda pakai — tulis eksplisit", "Hapus pengalaman C yang tidak relevan supaya 1 halaman". Never suggest fabricating anything.
+- "jobTitle" and "companyName": extract from the posting; use "" if the posting does not state the company.
+
+═══════════════════════════════════════
+LANGUAGE
+═══════════════════════════════════════
+Write "verdict", "suggestions", and the explanation part of each "matched" item in Bahasa Indonesia (casual-professional, no fluff).
+Keep the extracted requirement names in the posting's original language.
+
+Return ONLY the JSON object described by the response schema. No markdown, no commentary.`;
 }
+
+export const MATCH_SCORE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    score: { type: Type.NUMBER, description: '0-100 match score' },
+    verdict: { type: Type.STRING, description: '1-2 sentences in Bahasa Indonesia summarizing the fit' },
+    jobTitle: { type: Type.STRING, description: 'Position title from the posting' },
+    companyName: { type: Type.STRING, description: 'Empty string if the posting does not name the company' },
+    matched: { type: Type.ARRAY, items: { type: Type.STRING }, description: '"requirement → evidence from CV"' },
+    missing: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Requirements not supported by the CV' },
+    suggestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: '3-5 concrete CV improvement actions' },
+  },
+  required: ['score', 'verdict', 'jobTitle', 'companyName', 'matched', 'missing', 'suggestions'],
+};
+
+
+// =============================================================================
+// RESPONSE SCHEMA — memaksa model mengembalikan JSON valid (tidak ada lagi
+// "AI response was not valid JSON" / output terpotong)
+// =============================================================================
+import { Type } from '@google/genai';
+
+export const JOB_POSTING_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    jobTitle: { type: Type.STRING },
+    companyName: { type: Type.STRING, description: 'Empty string if the posting does not name the company' },
+    applicationEmail: { type: Type.STRING, description: 'Empty string if not stated' },
+    jobDescription: { type: Type.STRING, description: 'Complete posting content as plain text' },
+  },
+  required: ['jobTitle', 'companyName', 'applicationEmail', 'jobDescription'],
+};
+
+const TIMELINE_ENTRY = {
+  type: Type.OBJECT,
+  properties: {
+    name: { type: Type.STRING, description: 'Company / project / organization name exactly as in the CV' },
+    role: { type: Type.STRING, description: 'Job title or role' },
+    duration: { type: Type.STRING, description: 'Month YYYY – Month YYYY' },
+    highlights: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Achievement bullets, facts only' },
+  },
+  required: ['name', 'role', 'duration', 'highlights'],
+};
+
+export const TAILORED_CV_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    fullName: { type: Type.STRING },
+    targetedRoles: { type: Type.STRING, description: 'Exact target job title / secondary angle' },
+    email: { type: Type.STRING },
+    phone: { type: Type.STRING },
+    portfolio: { type: Type.STRING },
+    location: { type: Type.STRING },
+    professionalSummary: { type: Type.STRING, description: '2-3 sentences, max ~320 characters' },
+    skills: { type: Type.ARRAY, items: { type: Type.STRING }, description: '"Category: skill, skill" rows' },
+    experiences: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          company: { type: Type.STRING },
+          role: { type: Type.STRING },
+          duration: { type: Type.STRING },
+          highlights: { type: Type.ARRAY, items: { type: Type.STRING } },
+        },
+        required: ['company', 'role', 'duration', 'highlights'],
+      },
+    },
+    education: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          institution: { type: Type.STRING },
+          degree: { type: Type.STRING },
+          year: { type: Type.STRING },
+        },
+        required: ['institution', 'degree', 'year'],
+      },
+    },
+    projects: { type: Type.ARRAY, items: TIMELINE_ENTRY },
+    organizations: { type: Type.ARRAY, items: TIMELINE_ENTRY },
+    emailDraft: {
+      type: Type.OBJECT,
+      properties: {
+        to: { type: Type.STRING },
+        subject: { type: Type.STRING },
+        body: { type: Type.STRING },
+      },
+      required: ['to', 'subject', 'body'],
+    },
+  },
+  required: [
+    'fullName', 'targetedRoles', 'email', 'phone', 'portfolio', 'location',
+    'professionalSummary', 'skills', 'experiences', 'education', 'projects',
+    'organizations', 'emailDraft',
+  ],
+};

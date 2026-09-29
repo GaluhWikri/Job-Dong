@@ -1,78 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
+import { generateContent, hasAiKey, parseJsonLoose, responseText } from '@/lib/gemini';
+import { ANALYZE_JOB_IMAGE_PROMPT, JOB_POSTING_SCHEMA } from '@/lib/ai-prompts';
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || 'MOCK_API_KEY',
-});
+export const maxDuration = 60;
+export const runtime = 'nodejs';
 
-export const maxDuration = 60; // Set max duration for Vercel/Next.js edge functions
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('image') as File | null;
-    const manualDescription = formData.get('description') as string | null;
+    const manualDescription = (formData.get('description') as string | null) || '';
 
     if (!file && !manualDescription) {
       return NextResponse.json({ error: 'Berikan gambar lowongan atau teks deskripsi.' }, { status: 400 });
     }
-
-    let jobTitle = 'Posisi Tidak Diketahui';
-    let jobDescription = manualDescription || '';
-
-    if (file) {
-      // In development mode without API key, we mock the response
-      if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MOCK_API_KEY') {
-        await new Promise(r => setTimeout(r, 2000));
-        return NextResponse.json({
-          success: true,
-          jobTitle: "Software Engineer (Mock from Image)",
-          jobDescription: "Dicari Software Engineer dengan pengalaman React dan Node.js minimal 2 tahun. Penempatan Jakarta Selatan. Mampu bekerja sama dalam tim dan menyelesaikan masalah secara mandiri."
-        });
-      }
-
-      // Convert the uploaded File to a base64 string
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64Image = buffer.toString('base64');
-      const mimeType = file.type;
-
-      const { ANALYZE_JOB_IMAGE_PROMPT } = await import('@/lib/ai-prompts');
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          ANALYZE_JOB_IMAGE_PROMPT,
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: mimeType,
-            }
-          }
-        ],
-        config: {
-          responseMimeType: 'application/json',
-        }
-      });
-
-      try {
-        const extracted = JSON.parse(response.text || '{}');
-        jobTitle = extracted.jobTitle || jobTitle;
-        jobDescription = extracted.jobDescription || jobDescription;
-      } catch (e) {
-        console.error('Failed to parse Gemini response', e);
-        jobDescription = response.text || '';
-      }
+    if (file && file.size > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'Ukuran gambar terlalu besar (maks 10MB).' }, { status: 413 });
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      jobTitle,
-      jobDescription
+    // Tanpa gambar, teks manual dipakai apa adanya — tidak perlu AI.
+    if (!file) {
+      return NextResponse.json({ success: true, jobTitle: '', companyName: '', applicationEmail: '', jobDescription: manualDescription });
+    }
+
+    if (!hasAiKey()) {
+      return NextResponse.json(
+        { error: 'GEMINI_API_KEY belum di-set, analisis gambar lowongan tidak tersedia. Tempel teks lowongan secara manual.' },
+        { status: 503 }
+      );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const response = await generateContent({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: ANALYZE_JOB_IMAGE_PROMPT },
+            { inlineData: { mimeType: file.type || 'image/png', data: buffer.toString('base64') } },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: JOB_POSTING_SCHEMA,
+      },
     });
 
+    const raw = responseText(response);
+    try {
+      const extracted = parseJsonLoose<Record<string, string>>(raw);
+      return NextResponse.json({
+        success: true,
+        jobTitle: extracted.jobTitle || '',
+        companyName: extracted.companyName || '',
+        applicationEmail: extracted.applicationEmail || '',
+        jobDescription: extracted.jobDescription || '',
+      });
+    } catch {
+      // Model gagal mengikuti skema: pakai teks mentah sebagai deskripsi, jangan gagalkan seluruh alur.
+      console.error('[analyze-job-image] JSON parse gagal, fallback ke teks mentah');
+      return NextResponse.json({ success: true, jobTitle: '', companyName: '', applicationEmail: '', jobDescription: raw });
+    }
   } catch (error) {
-    console.error('Error analyzing job image:', error);
-    return NextResponse.json({ error: 'Gagal menganalisis gambar lowongan' }, { status: 500 });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('[analyze-job-image] error:', errMsg);
+    const busy = /503|UNAVAILABLE|429|RESOURCE_EXHAUSTED|overloaded/i.test(errMsg);
+    return NextResponse.json(
+      { error: busy ? 'Server AI sedang sibuk, coba lagi sebentar lagi.' : 'Gagal menganalisis gambar lowongan.' },
+      { status: busy ? 503 : 500 }
+    );
   }
 }

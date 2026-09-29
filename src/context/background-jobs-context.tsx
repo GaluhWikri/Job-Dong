@@ -83,6 +83,7 @@ export function BackgroundJobsProvider({ children }: { children: React.ReactNode
           cvText: data.cv_text,
           jobTitle,
           jobDescription: cleanJobDesc,
+          companyName,
           fullName: data.full_name,
           email: data.email,
           phone: data.phone,

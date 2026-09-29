@@ -3,17 +3,52 @@
 import { useEffect, useState } from "react";
 import { Calendar, Briefcase, MapPin, FileText, ChevronRight, Inbox, Loader2, AlertCircle, X } from "lucide-react";
 import Link from "next/link";
-import { getApplications, ApplicationRecord } from "@/lib/applications-store";
+import { getApplications, ApplicationRecord, ApplicationStatus, normalizeSheetDate } from "@/lib/applications-store";
 import { useBackgroundJobs } from "@/context/background-jobs-context";
 
-function StatusBadge({ status }: { status: ApplicationRecord['status'] }) {
-  const styles: Record<ApplicationRecord['status'], string> = {
-    'CV Dibuat': 'bg-blue-50 text-blue-700 border-blue-100',
-    'Dikirim': 'bg-purple-50 text-purple-700 border-purple-100',
-    'Dilihat': 'bg-amber-50 text-amber-700 border-amber-100',
-  };
+/**
+ * Tanggal bisa rusak (mis. angka serial dari spreadsheet) — jangan sampai satu
+ * baris buruk menjatuhkan seluruh halaman.
+ */
+function formatDate(value: string): string {
+  let d = new Date(value);
+  // Angka serial dari spreadsheet → tanggal asli, baru diformat.
+  if (Number.isNaN(d.getTime())) d = new Date(`${normalizeSheetDate(value)}T00:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d);
+}
+
+// Warna selalu dibarengi nomor tahap + label, jadi status tidak pernah
+// bergantung pada warna saja (tetap terbaca oleh buta warna).
+const STATUS_STYLES: Record<ApplicationStatus, string> = {
+  'CV Dibuat': 'text-muted-foreground border-border',
+  'Dikirim': 'bg-yellow text-background border-yellow',
+  'Dilihat': 'text-yellow border-yellow/40 bg-transparent',
+  'Interview': 'text-coral border-coral/40 bg-coral/10',
+  'Diterima': 'text-lime border-lime/40 bg-lime/10',
+  'Ditolak': 'text-muted-foreground border-border border-dashed',
+};
+
+// Nomor tahap = urutan kolom Kanban, sekaligus penanda yang tidak bergantung warna.
+const STATUS_GLYPH: Record<ApplicationStatus, string> = {
+  'CV Dibuat': '1',
+  'Dikirim': '2',
+  'Dilihat': '3',
+  'Interview': '4',
+  'Diterima': '5',
+  'Ditolak': '6',
+};
+
+function StatusBadge({ status }: { status: ApplicationStatus }) {
   return (
-    <span className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${styles[status]}`}>
+    <span className={`text-xs font-medium px-2.5 py-1 rounded-full border inline-flex items-center gap-2 ${STATUS_STYLES[status]}`}>
+      <span aria-hidden="true" className="tabular-nums opacity-70">{STATUS_GLYPH[status]}</span>
       {status}
     </span>
   );
@@ -24,7 +59,6 @@ export default function ApplicationsPage() {
   const [loaded, setLoaded] = useState(false);
   const { activeGenerations, clearGeneration } = useBackgroundJobs();
 
-  // Reload applications from localStorage whenever background tasks change (e.g. finishes)
   useEffect(() => {
     setApplications(getApplications());
     setLoaded(true);
@@ -32,182 +66,128 @@ export default function ApplicationsPage() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Memuat riwayat lamaran...</div>
+      <div className="flex-1 grid place-items-center">
+        <div className="text-sm text-muted-foreground flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" /> Memuat riwayat lamaran...
+        </div>
       </div>
     );
   }
 
-  // Filter active jobs in background that are loading or failed
   const pendingJobs = activeGenerations.filter(g => g.status === 'loading');
   const failedJobs = activeGenerations.filter(g => g.status === 'error');
-
   const hasItems = applications.length > 0 || pendingJobs.length > 0 || failedJobs.length > 0;
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Riwayat Lamaran</h1>
-          <p className="text-secondary">Pantau semua lamaran kerja yang telah Anda simpan.</p>
-        </div>
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-5xl w-full mx-auto">
+      <header className="mb-6">
+        <h1 className="font-gothic text-lg lg:text-xl font-bold uppercase tracking-[0.12em] text-foreground">Riwayat Lamaran</h1>
+        <p className="text-sm text-muted-foreground mt-1">Semua lamaran yang tersimpan, beserta status CV-nya.</p>
+      </header>
 
       {!hasItems ? (
-        <div className="bg-white rounded-3xl p-16 border border-gray-100 shadow-sm flex flex-col items-center text-center">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-5">
-            <Inbox className="w-10 h-10 text-gray-400" />
+        <div className="card p-12 flex flex-col items-center text-center">
+          <div className="w-12 h-12 rounded-xl bg-muted text-muted-foreground grid place-items-center mb-4">
+            <Inbox className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Belum ada lamaran</h2>
-          <p className="text-gray-500 mb-6 max-w-sm">
-            Anda belum melamar pekerjaan apa pun. Cari lowongan yang menarik dan klik "Buat CV Otomatis".
+          <h2 className="text-base font-semibold text-foreground">Belum ada lamaran</h2>
+          <p className="text-sm text-muted-foreground mt-1 mb-5 max-w-sm">
+            Cari lowongan yang menarik lalu klik &quot;Buat CV Otomatis&quot;, atau nilai kecocokan CV di halaman Kanban.
           </p>
-          <Link
-            href="/jobs"
-            className="bg-primary hover:bg-primary-light text-white px-6 py-3 rounded-xl font-semibold transition-colors"
-          >
-            Cari Lowongan
-          </Link>
+          <Link href="/jobs" className="btn-primary">Cari Lowongan</Link>
         </div>
       ) : (
-        <div className="space-y-4">
-          
-          {/* 1. RENDER RUNNING JOBS (LOADING STATE) */}
+        <div className="space-y-3">
+          {/* Running */}
           {pendingJobs.map(job => (
-            <div
-              key={job.jobId}
-              className="bg-white rounded-2xl p-6 border border-primary/20 bg-primary/5 shadow-sm animate-pulse relative overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 h-1 w-full bg-primary/25 overflow-hidden">
-                <div className="h-full bg-primary animate-infinite-loading"></div>
+            <div key={job.jobId} className="card p-5 relative overflow-hidden">
+              <div className="absolute top-0 left-0 h-0.5 w-full bg-white/[0.08] overflow-hidden">
+                <div className="h-full bg-primary animate-infinite-loading" />
               </div>
 
-              <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-md border border-primary/20">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      AI Generating CV...
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-lg text-foreground">
-                    {job.jobTitle}
-                  </h3>
-                  <div className="flex flex-wrap gap-3 mt-1 text-sm text-gray-500">
-                    <span className="flex items-center gap-1.5">
-                      <Briefcase className="w-3.5 h-3.5" /> {job.companyName}
-                    </span>
+              <div className="flex flex-col sm:flex-row gap-3 justify-between sm:items-center">
+                <div className="min-w-0">
+                  <span className="badge bg-white/[0.06] text-primary border-transparent">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    AI membuat CV...
+                  </span>
+                  <h3 className="font-semibold text-sm text-foreground mt-2">{job.jobTitle}</h3>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    <Briefcase className="w-3.5 h-3.5" /> {job.companyName}
                   </div>
                 </div>
-
-                <div className="flex gap-2 shrink-0 items-center">
-                  <span className="text-xs text-gray-400 font-medium">Jangan tutup tab ini...</span>
-                  <div className="flex items-center justify-center bg-gray-50 text-gray-400 p-2.5 rounded-xl border border-gray-100">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  </div>
-                </div>
+                <span className="text-xs text-muted-foreground shrink-0">Proses berjalan di background</span>
               </div>
             </div>
           ))}
 
-          {/* 2. RENDER FAILED JOBS */}
+          {/* Failed */}
           {failedJobs.map(job => (
-            <div
-              key={job.jobId}
-              className="bg-white rounded-2xl p-6 border border-red-100 bg-red-50/30 shadow-sm relative"
-            >
-              <button 
+            <div key={job.jobId} className="card p-5 border-border-strong relative">
+              <button
                 onClick={() => clearGeneration(job.jobId)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                title="Dismiss"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                title="Tutup"
               >
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-2.5 py-1 rounded-md border border-red-200">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      AI Gagal Membuat CV
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-lg text-foreground">
-                    {job.jobTitle}
-                  </h3>
-                  <div className="flex flex-wrap gap-3 mt-1 text-sm text-gray-500">
-                    <span className="flex items-center gap-1.5">
-                      <Briefcase className="w-3.5 h-3.5" /> {job.companyName}
-                    </span>
-                  </div>
-                  <p className="text-xs text-red-600 mt-2 font-medium bg-red-50 p-2 rounded-lg border border-red-100 max-w-xl">
-                    Error: {job.error || "Terjadi kesalahan AI."}
-                  </p>
-                </div>
-
-                <div className="flex gap-2 shrink-0 mt-4 md:mt-0">
-                  <Link
-                    href={`/jobs/${job.jobId}`}
-                    className="flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors border border-gray-200"
-                  >
-                    Coba Lagi
-                  </Link>
-                </div>
+              <span className="badge bg-white/[0.05] text-foreground border-border-strong">
+                <AlertCircle className="w-3 h-3" />
+                AI gagal membuat CV
+              </span>
+              <h3 className="font-semibold text-sm text-foreground mt-2">{job.jobTitle}</h3>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                <Briefcase className="w-3.5 h-3.5" /> {job.companyName}
               </div>
+              <p className="text-xs text-foreground mt-2 bg-white/[0.05] p-2 rounded-lg border border-border-strong max-w-xl">
+                {job.error || "Terjadi kesalahan AI."}
+              </p>
+              <Link href={`/jobs/${job.jobId}`} className="btn-ghost text-xs mt-3">
+                Coba Lagi
+              </Link>
             </div>
           ))}
 
-          {/* 3. RENDER COMPLETED APPLICATIONS */}
+          {/* Completed */}
           {applications.map(app => {
-            const formattedDate = new Intl.DateTimeFormat('id-ID', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            }).format(new Date(app.appliedAt));
+            const formattedDate = formatDate(app.appliedAt);
+            const isPasted = app.jobId.startsWith('paste-');
 
             return (
-              <div
-                key={app.id}
-                className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                  <div className="flex-1">
+              <div key={app.id} className="card card-hover p-5">
+                <div className="flex flex-col sm:flex-row gap-3 justify-between sm:items-center">
+                  <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <StatusBadge status={app.status} />
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" /> {formattedDate}
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 shrink-0" /> <span className="whitespace-nowrap">{formattedDate}</span>
                       </span>
                     </div>
-                    <h3 className="font-bold text-lg text-foreground hover:text-primary transition-colors">
-                      <Link href={`/jobs/${app.jobId}`}>{app.jobTitle}</Link>
+                    <h3 className="font-semibold text-sm text-foreground">
+                      {isPasted ? app.jobTitle : <Link href={`/jobs/${app.jobId}`} className="hover:text-primary">{app.jobTitle}</Link>}
                     </h3>
-                    <div className="flex flex-wrap gap-3 mt-1 text-sm text-gray-500">
-                      <span className="flex items-center gap-1.5">
-                        <Briefcase className="w-3.5 h-3.5" /> {app.companyName}
-                      </span>
+                    <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
+                      {app.companyName && (
+                        <span className="flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5" /> {app.companyName}</span>
+                      )}
                       {app.location && (
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5" /> {app.location}
-                        </span>
+                        <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {app.location}</span>
                       )}
                     </div>
                   </div>
 
                   <div className="flex gap-2 shrink-0">
-                    <Link
-                      href={`/custom-cv?appId=${app.id}`}
-                      className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-                    >
-                      <FileText className="w-4 h-4" /> Lihat CV
-                    </Link>
-                    <Link
-                      href={`/jobs/${app.jobId}`}
-                      className="flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors border border-gray-200"
-                    >
-                      Lihat Loker <ChevronRight className="w-4 h-4" />
-                    </Link>
+                    {app.generatedCv && (
+                      <Link href={`/custom-cv?appId=${app.id}`} className="btn-primary text-xs">
+                        <FileText className="w-3.5 h-3.5" /> Lihat CV
+                      </Link>
+                    )}
+                    {!isPasted && (
+                      <Link href={`/jobs/${app.jobId}`} className="btn-ghost text-xs">
+                        Lihat Loker <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

@@ -51,8 +51,24 @@ export function AtsDocument({ cvData }: Props) {
             textTransform: "uppercase",
           }}
         >
-          {cvData.fullName || "GALUH WIKRI RAMADHAN"}
+          {cvData.fullName || "CANDIDATE NAME"}
         </h1>
+
+        {/* Headline peran yang dilamar — yang pertama dibaca HR saat screening */}
+        {cvData.targetedRoles && (
+          <div
+            style={{
+              fontSize: "11pt",
+              fontWeight: "bold",
+              color: "#444444",
+              letterSpacing: "0.6px",
+              textTransform: "uppercase",
+              marginBottom: "4px",
+            }}
+          >
+            {cvData.targetedRoles}
+          </div>
+        )}
 
         {/* Contact info row with emojis */}
         <div
@@ -60,12 +76,11 @@ export function AtsDocument({ cvData }: Props) {
             fontSize: "9.5pt",
             color: "#333333",
             display: "flex",
-            flexWrap: "nowrap",
+            flexWrap: "wrap",
             justifyContent: "center",
-            gap: "12px",
+            gap: "6px 12px",
             alignItems: "center",
             marginTop: "4px",
-            whiteSpace: "nowrap",
           }}
         >
           {cvData.location && (
