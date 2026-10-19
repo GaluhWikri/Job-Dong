@@ -165,14 +165,23 @@ STYLE & LAYOUT RULES
 • "targetedRoles": start with the exact position title from the posting, then a secondary angle the CV supports, e.g. "Quality Assurance Engineer / Software Tester".
 • "location": city + province/country from the CV. "portfolio": only links that exist in the CV or candidate info.
 
-[EMAIL DRAFT]
+[EMAIL DRAFT — COVER LETTER mengikuti template "Impact Cover Letter"]
 • "to": ${applicationEmail ? `use exactly this address from the posting: ${applicationEmail}` : 'if the posting states an application/recruitment email use it; if not, return "" (empty string). NEVER invent an address on a real domain.'}
 • "subject": "Application for [Exact Job Title] - [Full Name]".
-• "body": a professional cover email (write it in the language of the job posting) with:
-  opening (position + where the posting was seen) → evidence paragraph (2–3 real achievements/projects from the CV relevant to the posting) → why this role (only facts stated in the posting; otherwise keep it generic and brief) → short close with availability.
-• Maximum ~230 words. No placeholders, no brackets, no invented achievements, no fabricated company details.
-• FORMAT: separate the greeting, each paragraph, and the sign-off with a real blank line — encode them as "\n\n" in the JSON string. Never return the email as one continuous line.
-• Sign off with the candidate's real name.
+• "body": tulis dalam bahasa yang digunakan job posting, mengikuti KERANGKA template cover letter di bawah. Tiap paragraf WAJIB dipisah baris kosong ("\n\n"). Jangan pernah return satu paragraf tanpa pemisah.
+
+  KERANGKA COVER LETTER (wajib ikuti urutan ini):
+  ───────────────────────────────────────────────
+  1. GREETING — salam personal. Kalau nama hiring manager/recruiter disebut di posting, pakai: "Dear [Nama],". Kalau tidak ada, pakai "Dear Hiring Manager," atau "Dear [Company Name] Team," (pakai nama company dari posting; jangan invent). JANGAN pakai "To Whom It May Concern".
+  2. ENGAGING OPENER — 1 kalimat pembuka yang bukan klise. Langsung sebut POSISI yang dilamar + nama company (dari posting) + di mana lihat lowongan (kalau posting tidak nyebut sumber, tulis "saw the opening on [platform]" generik atau skip). Hindari "I am writing to apply for…"; buat lebih natural dan spesifik.
+  3. WHY THIS ROLE / THIS COMPANY — 1 paragraf pendek (2-3 kalimat). Jelaskan minat pada role DAN company HANYA berdasarkan fakta yang disebut di job description (mis. misi company, tanggung jawab role, tim, teknologi). JANGAN invent company facts. Kalau posting minim info, paragraf ini singkat saja.
+  4. EVIDENCE / IMPACT PARAGRAF — inti cover letter, 1 paragraf padat (4-6 kalimat). Ambil 2-3 pencapaian/proyek/pengalaman paling RELEVAN dari CV yang langsung menjawab requirement posting. Untuk tiap pencapaian: sebut APA yang dilakukan + DENGAN APA (tools/method) + HASIL/IMPACT. Hanya pakai angka/metrik yang BENAR-BENAR ada di CV — jangan invent persentase, revenue, atau angka lain. Kalimat harus natural, bukan copy-paste bullet CV. Akhiri dengan jembatan: "I'm eager to bring this to [Company]."
+  5. CROSS-FUNCTIONAL / SOFT SKILL SENTENCE — 1 kalimat opsional: jika CV menunjukkan kolaborasi tim/antar-departemen/leadership yang relevan dengan posting, sebut singkat. Kalau tidak ada, SKIP.
+  6. CLOSE & AVAILABILITY — 1 paragraf pendek (2-3 kalimat). Ucapkan terima kasih, sebut ketersediaan untuk interview/diskusi, dan tutup dengan: "I look forward to the opportunity to discuss how I can contribute to [Company]."
+  7. SIGN-OFF — "Best regards," (atau "Sincerely,") di baris baru, lalu nama lengkap kandidat di baris berikutnya. Tidak perlu alamat/telepon di body email (sudah ada di header email).
+
+  ATURAN INTEGRITY (sama dengan CV): semua fakta kandidat HANYA dari CV. Tidak ada pencapaian/metrik/tanggal/company yang di-invent. Kalau CV minim pencapaian quantitative, tulis kualitatif yang jujur ("led a team of…", "coordinated with…") — jangan dipaksakan angka.
+  Panjang total body: maksimal ~250 kata. Tidak ada placeholder [bracket], tidak ada "Your Company" generik kalau nama company sudah diketahui dari posting.
 
 ═══════════════════════════════════════
 OUTPUT
