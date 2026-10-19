@@ -4,7 +4,7 @@ import { useState, Suspense, useEffect } from "react";
 import {
   UploadCloud, FileText, CheckCircle2, AlertCircle,
   RefreshCw, Briefcase, Download, ChevronDown, ChevronUp, X,
-  Mail, Copy, Check, ExternalLink
+  Mail, Copy, Check, ExternalLink, Languages
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { TailoredCvData } from "@/lib/job-providers/interface";
@@ -78,6 +78,10 @@ function CustomCvContent() {
   const [jobTitle, setJobTitle] = useState(initialTitle);
   const [jobCompany, setJobCompany] = useState('');
   const [jobEmail, setJobEmail] = useState('');
+
+  // Output language switch — 'id' (Bahasa Indonesia, default) | 'en' (English).
+  // Menentukan bahasa seluruh hasil generate: summary CV, bullet pengalaman, dan cover letter.
+  const [language, setLanguage] = useState<'id' | 'en'>('id');
 
   // Job image preview generator
   useEffect(() => {
@@ -301,6 +305,7 @@ function CustomCvContent() {
           fullName: profileFullName,
           email: profileEmail,
           phone: profilePhone,
+          language: language,
         }),
       });
 
@@ -577,6 +582,43 @@ function CustomCvContent() {
                   placeholder="Tempel syarat, kualifikasi, atau deskripsi pekerjaan..."
                   className="w-full px-4 py-2.5 bg-card border border-border rounded-xl focus:outline-none focus:border-primary text-sm resize-none font-medium text-foreground placeholder:text-muted-foreground transition-all duration-200"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Language switch — output bahasa hasil generate */}
+          <div className="mt-6 pt-6 border-t border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Languages className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Bahasa Output Hasil Generate</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">CV &amp; cover letter akan ditulis dalam bahasa ini.</p>
+                </div>
+              </div>
+              <div className="inline-flex items-center rounded-xl bg-card border border-border p-1 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setLanguage('id')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    language === 'id'
+                      ? 'bg-primary text-background'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Bahasa Indonesia
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('en')}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    language === 'en'
+                      ? 'bg-primary text-background'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  English
+                </button>
               </div>
             </div>
           </div>

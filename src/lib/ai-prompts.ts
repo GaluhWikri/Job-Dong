@@ -66,6 +66,8 @@ export interface GenerateCvPromptParams {
   fullName?: string;
   email?: string;
   phone?: string;
+  /** Bahasa output yang dipilih user: 'id' = Bahasa Indonesia, 'en' = English. Default 'id'. */
+  language?: 'id' | 'en';
 }
 
 export function getGenerateCvPrompt({
@@ -77,7 +79,11 @@ export function getGenerateCvPrompt({
   fullName,
   email,
   phone,
+  language = 'id',
 }: GenerateCvPromptParams) {
+  const isId = language === 'id';
+  const langName = isId ? 'Bahasa Indonesia' : 'English';
+
   return `
 You are a senior HR & Talent Acquisition professional with 20+ years of experience screening resumes —
 first as an ATS reviewer, then as the human recruiter reading shortlisted CVs. You are now on the
@@ -127,8 +133,17 @@ When a requirement is NOT supported by the CV: leave it out. Do not mention it i
 ═══════════════════════════════════════
 STYLE & LAYOUT RULES
 ═══════════════════════════════════════
-[LANGUAGE]
-• Write ALL output in fluent professional English. Keep proper nouns (company, institution, city) as-is.
+[LANGUAGE — OUTPUT WAJIB ${langName.toUpperCase()}]
+• Tulis SELURUH output (summary, skills, experience bullets, projects, organizations, education string, dan cover letter) dalam ${langName} yang fasih dan profesional.
+${isId
+  ? '  - Bahasa Indonesia: pakai diksi profesional standar (mis. "Mengembangkan", "Mengotomatisasi", "Memvalidasi", "Menjalankan", "Mendokumentasikan", "Menganalisis", "Mengoordinasikan", "Merancang", "Memimpin").'
+  : '  - English: use professional standard diction (e.g. "Developed", "Automated", "Validated", "Executed", "Documented", "Analysed", "Coordinated", "Designed", "Led").'}
+• Tetap pertahankan proper noun apa adanya: nama company, institusi, kota, teknologi/tools (mis. "React", "Postman", "Universitas Budi Luhur", "PT Telkom") — JANGAN diterjemahkan.
+• ${isId
+  ? 'Cover letter subject pakai format: "Lamaran untuk [Judul Pekerjaan] - [Nama Lengkap]".'
+  : 'Cover letter subject pakai format: "Application for [Job Title] - [Full Name]".'}
+• Target job title tetap memakai judul dari posting (jangan diterjemahkan).
+• Jika job posting ditulis dalam bahasa yang berbeda dari pilihan user, tetap tulis output dalam ${langName} — kecuali nama proper noun dan requirement tools.
 
 [ONE PAGE — hard limit, but substance beats padding]
 • Everything must fit one A4 page.
@@ -167,18 +182,18 @@ STYLE & LAYOUT RULES
 
 [EMAIL DRAFT — COVER LETTER mengikuti template "Impact Cover Letter"]
 • "to": ${applicationEmail ? `use exactly this address from the posting: ${applicationEmail}` : 'if the posting states an application/recruitment email use it; if not, return "" (empty string). NEVER invent an address on a real domain.'}
-• "subject": "Application for [Exact Job Title] - [Full Name]".
+• "subject": ${isId ? '"Lamaran untuk [Judul Pekerjaan] - [Nama Lengkap]".' : '"Application for [Job Title] - [Full Name]".'}
 • "body": tulis dalam bahasa yang digunakan job posting, mengikuti KERANGKA template cover letter di bawah. Tiap paragraf WAJIB dipisah baris kosong ("\n\n"). Jangan pernah return satu paragraf tanpa pemisah.
 
-  KERANGKA COVER LETTER (wajib ikuti urutan ini):
+  KERANGKA COVER LETTER (wajib ikuti urutan ini, ditulis dalam ${langName}):
   ───────────────────────────────────────────────
-  1. GREETING — salam personal. Kalau nama hiring manager/recruiter disebut di posting, pakai: "Dear [Nama],". Kalau tidak ada, pakai "Dear Hiring Manager," atau "Dear [Company Name] Team," (pakai nama company dari posting; jangan invent). JANGAN pakai "To Whom It May Concern".
-  2. ENGAGING OPENER — 1 kalimat pembuka yang bukan klise. Langsung sebut POSISI yang dilamar + nama company (dari posting) + di mana lihat lowongan (kalau posting tidak nyebut sumber, tulis "saw the opening on [platform]" generik atau skip). Hindari "I am writing to apply for…"; buat lebih natural dan spesifik.
+  1. GREETING — salam personal. Kalau nama hiring manager/recruiter disebut di posting, pakai: "${isId ? 'Yth. [Nama],' : 'Dear [Nama],'}". Kalau tidak ada, pakai "${isId ? 'Yth. Hiring Manager,' : 'Dear Hiring Manager,'}" atau "${isId ? 'Yth. Tim [Nama Company],' : 'Dear [Company Name] Team,'}" (pakai nama company dari posting; jangan invent). ${isId ? 'JANGAN pakai "Kepada Yth." generik.' : 'Avoid "To Whom It May Concern".'}
+  2. ENGAGING OPENER — 1 kalimat pembuka yang bukan klise. Langsung sebut POSISI yang dilamar + nama company (dari posting) + di mana lihat lowongan (kalau posting tidak nyebut sumber, skip atau pakai generik natural). ${isId ? 'Hindari "Saya menulis untuk melamar..."; buat lebih natural dan spesifik.' : 'Avoid "I am writing to apply for…"; make it natural and specific.'}
   3. WHY THIS ROLE / THIS COMPANY — 1 paragraf pendek (2-3 kalimat). Jelaskan minat pada role DAN company HANYA berdasarkan fakta yang disebut di job description (mis. misi company, tanggung jawab role, tim, teknologi). JANGAN invent company facts. Kalau posting minim info, paragraf ini singkat saja.
-  4. EVIDENCE / IMPACT PARAGRAF — inti cover letter, 1 paragraf padat (4-6 kalimat). Ambil 2-3 pencapaian/proyek/pengalaman paling RELEVAN dari CV yang langsung menjawab requirement posting. Untuk tiap pencapaian: sebut APA yang dilakukan + DENGAN APA (tools/method) + HASIL/IMPACT. Hanya pakai angka/metrik yang BENAR-BENAR ada di CV — jangan invent persentase, revenue, atau angka lain. Kalimat harus natural, bukan copy-paste bullet CV. Akhiri dengan jembatan: "I'm eager to bring this to [Company]."
+  4. EVIDENCE / IMPACT PARAGRAF — inti cover letter, 1 paragraf padat (4-6 kalimat). Ambil 2-3 pencapaian/proyek/pengalaman paling RELEVAN dari CV yang langsung menjawab requirement posting. Untuk tiap pencapaian: sebut APA yang dilakukan + DENGAN APA (tools/method) + HASIL/IMPACT. Hanya pakai angka/metrik yang BENAR-BENAR ada di CV — jangan invent persentase, revenue, atau angka lain. Kalimat harus natural, bukan copy-paste bullet CV. ${isId ? 'Akhiri dengan jembatan: "Saya antusias untuk membawa pengalaman ini ke [Company]."' : 'End with a bridge: "I\'m eager to bring this to [Company]."'}
   5. CROSS-FUNCTIONAL / SOFT SKILL SENTENCE — 1 kalimat opsional: jika CV menunjukkan kolaborasi tim/antar-departemen/leadership yang relevan dengan posting, sebut singkat. Kalau tidak ada, SKIP.
-  6. CLOSE & AVAILABILITY — 1 paragraf pendek (2-3 kalimat). Ucapkan terima kasih, sebut ketersediaan untuk interview/diskusi, dan tutup dengan: "I look forward to the opportunity to discuss how I can contribute to [Company]."
-  7. SIGN-OFF — "Best regards," (atau "Sincerely,") di baris baru, lalu nama lengkap kandidat di baris berikutnya. Tidak perlu alamat/telepon di body email (sudah ada di header email).
+  6. CLOSE & AVAILABILITY — 1 paragraf pendek (2-3 kalimat). Ucapkan terima kasih, sebut ketersediaan untuk interview/diskusi, dan tutup dengan: ${isId ? '"Saya menantikan kesempatan untuk berdiskusi bagaimana saya dapat berkontribusi untuk [Company]."' : '"I look forward to the opportunity to discuss how I can contribute to [Company]."'}
+  7. SIGN-OFF — "${isId ? 'Hormat saya,' : 'Best regards,'}" (atau "${isId ? 'Salam hormat,' : 'Sincerely,'}") di baris baru, lalu nama lengkap kandidat di baris berikutnya.
 
   ATURAN INTEGRITY (sama dengan CV): semua fakta kandidat HANYA dari CV. Tidak ada pencapaian/metrik/tanggal/company yang di-invent. Kalau CV minim pencapaian quantitative, tulis kualitatif yang jujur ("led a team of…", "coordinated with…") — jangan dipaksakan angka.
   Panjang total body: maksimal ~250 kata. Tidak ada placeholder [bracket], tidak ada "Your Company" generik kalau nama company sudah diketahui dari posting.

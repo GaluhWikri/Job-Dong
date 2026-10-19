@@ -25,7 +25,7 @@ function formatEmailBody(raw: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { cvText, jobDescription, jobTitle, companyName, applicationEmail, fullName, email, phone } = await request.json();
+    const { cvText, jobDescription, jobTitle, companyName, applicationEmail, fullName, email, phone, language } = await request.json();
 
     if (!cvText?.trim() || !jobDescription?.trim()) {
       return NextResponse.json(
@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Normalisasi bahasa: 'en' → English, selain itu → 'id' (default Bahasa Indonesia).
+    const lang: 'id' | 'en' = language === 'en' ? 'en' : 'id';
+
     const prompt = getGenerateCvPrompt({
       cvText,
       jobDescription,
@@ -50,6 +53,7 @@ export async function POST(request: NextRequest) {
       fullName,
       email,
       phone,
+      language: lang,
     });
 
     const response = await generateContent({
